@@ -16,7 +16,9 @@ function bodyHasResultProperty(req, res, next) {
 }
 
 function list(req, res) {
-  res.json({ data: flips });
+  const { countId } = req.params;
+  const byResult = countId ? (flip) => flip.result === countId : () => true;
+  res.json({ data: flips.filter(byResult) });
 }
 
 function resultPropertyIsValid(req, res, next) {
@@ -36,6 +38,7 @@ function flipExists(req, res, next) {
   const { flipId } = req.params;
   const foundFlip = flips.find((flip) => flip.id === Number(flipId));
   if (foundFlip) {
+    res.locals.flip = foundFlip;
     return next();
   } else {
     next({
@@ -46,9 +49,7 @@ function flipExists(req, res, next) {
 }
 
 function read(req, res) {
-  const { flipId } = req.params;
-  const foundFlip = flips.find((flip) => flip.id === Number(flipId));
-  res.json({ data: foundFlip });
+  res.json({ data: res.locals.flip });
 }
 
 function create(req, res, next) {
@@ -63,12 +64,11 @@ function create(req, res, next) {
 }
 
 function update(req, res, next) {
-  const { flipId } = req.params;
-  const foundFlip = flips.find((flip) => flip.id === Number(flipId));
-  const originalResult = foundFlip.result;
+  const flip = res.locals.flip;
+  const originalResult = flip.result;
   const { data: { result } = {} } = req.body;
   if (originalResult !== result) {
-    foundFlip.result = result;
+    flip.result = result;
     counts[originalResult] = counts[originalResult] - 1;
     counts[result] = counts[result] + 1;
   }
